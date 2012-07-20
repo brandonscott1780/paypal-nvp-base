@@ -57,12 +57,6 @@ public abstract class APICallerBase
      */
     protected static Map endpoints;
 
-
-    static
-    {
-        readProxyInfo();
-    }
-
     public void finalize()
     {
     	Keys.unregisterKeys(String.valueOf(this.hashCode()));
@@ -113,62 +107,6 @@ public abstract class APICallerBase
                 {
                     log.warn(MessageResources.getMessage("ENDPOINTS_EMPTY"));
                 }
-            }
-        }
-    }
-
-    /**
-     * This method sets the proxy properties.
-     *  @param message  the resource name
-    */
-    private static void readProxyInfo()
-    {
-    	try {
-            /*
-             * Reading proxy properties from sdkproxy.properties file.
-             */
-    		String message = "sdkproxy";
-            ResourceBundle bundle = ResourceBundle.getBundle(message, Locale.getDefault());
-			String useProxy = bundle.getString("PROXY_SET");
-			if("true".equalsIgnoreCase(useProxy))
-			{
-	            String host = bundle.getString("PROXY_HOST");
-	            String port = bundle.getString("PROXY_PORT");
-	            //Make sure the port is a valid integer
-	            Integer.parseInt(port);
-	            final Properties systemProperties = System.getProperties();
-				systemProperties.put("https.proxySet", useProxy);
-				systemProperties.put("https.proxyHost", host);
-				systemProperties.put("https.proxyPort", port);
-
-				final String username = bundle.getString("PROXY_USERNAME");
-				if (!Util.isEmpty(username))
-					systemProperties.put("https.proxyUser", username);
-				final String password = bundle.getString("PROXY_PASSWORD");
-				if (!Util.isEmpty(password))
-					systemProperties.put("https.proxyPassword", password);
-	            if (log.isInfoEnabled()) {
-	            	log.info(MessageFormat.format(MessageResources.getMessage("PROXY_SET"), new Object[] {
-	                    host, port}));
-	            }
-			}
-        }
-        catch(MissingResourceException e)
-        {
-	   if (log.isInfoEnabled()) {
-            log.info(MessageResources.getMessage("PROXY_NOT_SET"));
-	   }
-        }
-        catch (NumberFormatException e)
-        {
-            if (log.isDebugEnabled()) {
-            	log.debug(MessageResources.getMessage("PROXY_PORT_INVALID"), e);
-            }
-        }
-        catch (Exception e)
-        {
-            if (log.isDebugEnabled()) {
-            	log.debug(MessageResources.getMessage("PROXY_INVALID"), e);
             }
         }
     }
