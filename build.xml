@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="paypal_java_sdk" default="help" basedir=".">
+	<description>
+		This is the build script for the PayPal Java SDK.
+	</description>
+
+	<property file="build.properties"/>
+	<property environment="env"/>
+	<property name="buildtemp" value="${env.TEMP}/sdkbuild"/>
+	<property name="classes" value="${buildtemp}/classes"/>
+	<property name="stubs.dir" value="${buildtemp}/stubs"/>
+	<property name="stubs.src" value="${stubs.dir}/src"/>
+	<property name="stubs.classes" value="${stubs.dir}/classes"/>
+	<property name="dist.dir" value="${buildtemp}/dist"/>
+	<property name="dist.soap.filename" value="${dist.dir}/PP_Java_Windows__SOAP_SDK.zip"/>
+	<property name="dist.nvp.filename" value="${dist.dir}/PP_Java_NVP_SDK.zip"/>
+	<available file="${src.dir}/wsdl/${wsdl}" property="wsdl.exists"/>
+	
+	<!-- Oauth Properties -->
+	<property name="Oauth.jarname" value="paypal-auth-signature-1.0.jar" />
+	<property name="Oauth.Classes" value="${buildtemp}/OauthClasses" />
+	<property name="Oauth.filename" value="PP_Java_Auth_Signature.zip" />
+	
+	<path id="soap.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="activation.jar"/>
+			<include name="axis.jar"/>
+			<include name="axis-ant.jar"/>
+			<include name="axis-schema.jar"/>
+			<include name="commons-codec-1.3.jar"/>
+			<include name="commons-discovery-0.2.jar"/>
+			<include name="commons-logging-1.0.4.jar"/>
+			<include name="jaxrpc.jar"/>
+			<include name="log4j-1.2.8.jar"/>
+			<include name="mailapi.jar"/>
+			<include name="paypal_stubs.jar"/>
+			<include name="saaj.jar"/>
+			<include name="xerces.jar"/>
+			<include name="xstream-1.1.3.jar"/>
+			<include name="wsdl4j-1.5.1.jar"/>
+		</fileset>
+	</path>
+
+	<path id="base.classpath">
+		<path refid="soap.classpath"/>
+		<fileset dir="${lib.dir}">
+			<include name="commons-httpclient-3.0.1.jar"/>
+		</fileset>
+	</path>
+
+	<path id="console.classpath">
+		<path refid="base.classpath"/>
+		<fileset dir="${lib.dir}">
+			<include name="paypal_base.jar"/>
+			<include name="sax2.jar"/>
+			<include name="xalan.jar"/>
+			<include name="xerces.jar"/>
+			<include name="xercesImpl.jar"/>
+			<include name="xml-apis.jar"/>
+			<include name="xpp3-1.1.3.4d_b4_min.jar"/>
+		</fileset>
+	</path>
+
+	<path id="junit.classpath">
+		<path refid="base.classpath"/>
+		<fileset dir="${lib.dir}">
+			<include name="junit.jar"/>
+		</fileset>
+	</path>
+
+
+
+	<!-- Load a properties file from the axis classpath -->
+	<taskdef resource="axis-tasks.properties" classpathref="soap.classpath"/>
+
+	<!-- TARGETS -->
+
+	<!-- Default target does everything -->
+	<target name="all"            depends="soap"/>
+	<target name="soap"           depends="dist"/>
+	<!-- Default target does everything -->
+	<target name="nvp"            depends="nvp-dist"/>
+	<target name="oauth"            depends="Oauth-dist"/>
+	
+	<!-- Clean up everything -->
+	<target name="clean" depends="clean-base, clean-stubs, clean-jar, clean-doc, clean-dist"/>
+
+	<target name="clean-base">
+		<delete dir="${classes}" failonerror="false"/>
+	</target>
+
+	<target name="clean-stubs">
+		<delete dir="${stubs.dir}" failonerror="false"/>
+	</target>
+
+	<patternset id="jars.patternset">
+		<includesfile name="${base.jarname}"/>
+		<includesfile name="${stubs.jarname}"/>
+		<includesfile name="${console.jarname}"/>
+		<includesfile name="${junit.jarname}"/>
+	</patternset>
+	<fileset dir="${lib.dir}" id="jar.files">
+		<patternset refid="jars.patternset">
+		</patternset>
+	</fileset>
+	<target name="clean-jar">
+		<delete quiet="true">
+			<fileset refid="jar.files"/>
+		</delete>
+	</target>
+
+	<!-- The init target sets up the build environment -->
+	<target name="nvp-init" depends="clean-base">
+		<mkdir dir="${javadoc.dir}"/>
+		<mkdir dir="${lib.dir}"/>
+	</target>
+
+	<!-- *************************** -->
+	<!-- WSDL-generated client stubs -->
+	<!-- *************************** -->
+	<target name="stubs" depends="clean-stubs" description="build stubs jar file" if="wsdl.exists">
+		<mkdir dir="${stubs.src}"/>
+		<mkdir dir="${stubs.classes}"/>
+		<axis-wsdl2java output="${stubs.src}" timeout="-1" verbose="false" url="${src.dir}/wsdl/${wsdl}">
+			<mapping namespace="urn:ebay:apis:eBLBaseComponents" package="com.paypal.soap.api"/>
+			<mapping namespace="urn:ebay:apis:CoreComponentTypes" package="com.paypal.soap.api"/>
+			<mapping namespace="urn:ebay:apis:EnhancedDataTypes" package="com.paypal.soap.api"/>
+			<mapping namespace="urn:ebay:api:PayPalAPI" package="com.paypal.soap.api"/>
+		</axis-wsdl2java>
+		<javac srcdir="${stubs.src}" destdir="${stubs.classes}">
+			<classpath refid="soap.classpath"/>
+		</javac>
+		<jar destfile="${lib.dir}/${stubs.jarname}" basedir="${stubs.classes}"/>
+		<delete dir="${stubs.classes}" failonerror="false"/>
+	</target>
+
+	<!-- ************* -->
+	<!-- SDK framework -->
+	<!-- ************* -->
+	<patternset id="base.patternset">
+		<exclude name="**/console/**"/>
+		<exclude name="**/junit/**"/>
+	</patternset>
+
+
+	<target name="common-base" depends="clean-base">
+		<mkdir dir="${classes}"/>
+		<javac destdir="${classes}" debug="true">
+			<classpath refid="base.classpath"/>
+			<src path="${src.dir}"/>
+			<patternset refid="base.patternset"/>
+			<exclude name="**/util/TestConnection.java" if="soap"/>
+			<exclude name="**/**/nvp/**" if="soap"/>
+			<exclude name="**/**/NVP*.java" if="soap"/>
+			<exclude name="**/NVPCallerServices.java" if="soap"/>
+			<exclude name="**/soap/**" if="nvp"/>
+			<exclude name="**/CallerServices.java" if="nvp"/>
+			<exclude name="**/util/converters/*" if="nvp"/>
+			<exclude name="**/util/XMLSerializer.java" if="nvp"/>
+			<exclude name="**/util/ObjectIterator.java" if="nvp"/>
+			<exclude name="**/util/ResponseBuilder.java" if="soap"/>
+		</javac>
+		<mkdir dir="${lib.dir}"/>
+		<jar destfile="${lib.dir}/${base.jarname}">
+			<fileset dir="${classes}">
+				<patternset refid="base.patternset"/>
+			</fileset>
+			<fileset dir="${src.dir}" includes="**/*.properties">
+
+				<include name="xsl/soapProtect.xsl" if="soap"/>
+				<include name="wsdl/paypal-endpoints.xml" if="soap"/>
+				<include name="wsdl/${core}" if="soap"/>
+				<include name="wsdl/${ebl}" if="soap"/>
+				<include name="wsdl/${wsdl}" if="soap"/>
+
+				<include name="wsdl/paypal-endpoints-nvp.xml" if="nvp"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="base" depends="stubs" description="build base sdk jar file">
+		<antcall target="common-base">
+			<param name="soap" value="true"/>
+		</antcall>
+	</target>
+
+	<target name="nvp-base" description="build base sdk jar file">
+		<antcall target="common-base">
+			<param name="nvp" value="true"/>
+		</antcall>
+	</target>
+
+	<!-- ********** -->
+	<!-- JSP Sample -->
+	<!-- ********** -->
+	<target name="jsp">
+		<ant antfile="build.xml" dir="samples/JSP/" target="main"/>
+	</target>
+
+	<!-- ********** -->
+	<!-- NVP JSP Sample -->
+	<!-- ********** -->
+	<target name="nvp-jsp">
+		<ant antfile="build.xml" dir="samples/JSP/" target="NvpSamples"/>
+	</target>
+
+	<!-- ******* -->
+	<!-- Console -->
+	<!-- ******* -->
+	<target name="compile-console" depends="base" description="compile java files">
+		<javac srcdir="${src.dir}/com/paypal/sdk/console" destdir="${classes}">
+			<classpath refid="console.classpath"/>
+		</javac>
+	</target>
+
+	<target name="console" depends="compile-console">
+		<jar destfile="${lib.dir}/${console.jarname}">
+			<fileset dir="${classes}" includes="com/paypal/sdk/console/**"/>
+			<manifest>
+				<attribute name="Main-Class" value="com.paypal.sdk.console.Console"/>
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Class-Path" value="${console.classpath}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<property name="junit.dir" value="${src.dir}/com/paypal/sdk/junit"/>
+	<available file="${junit.dir}" property="junit.exists"/>
+	<patternset id="junit.jar.files">
+		<include name="**/junit/**"/>
+	</patternset>
+	<target name="soap-junit" depends="base" description="build unit tests" if="junit.exists">
+		<javac srcdir="${junit.dir}" destdir="${classes}">
+			<classpath refid="junit.classpath"/>
+			<exclude name="**/nvp/*"/>
+		</javac>
+		<jar destfile="${lib.dir}/${junit.jarname}">
+			<fileset dir="${classes}">
+				<patternset refid="junit.jar.files"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="nvp-junit" depends="nvp-base" description="build unit tests" if="junit.exists">
+		<echo message="junit.classpath=${junit.classpath}">
+		</echo>
+		<javac srcdir="${junit.dir}" destdir="${classes}">
+			<classpath refid="junit.classpath" />
+			<include name="*/**/*.java"/>
+		</javac>
+		<jar destfile="${lib.dir}/${junit.jarname}">
+			<fileset dir="${classes}">
+				<patternset refid="junit.jar.files"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<!-- ********************* -->
+	<!-- Javadoc documentation -->
+	<!-- ********************* -->
+	<target name="clean-doc">
+		<delete dir="docs" failonerror="false"/>
+	</target>
+
+	<target name="doc" depends="base" description="generate javadoc" if="doc">
+		<mkdir dir="${javadoc.dir}"/>
+		<javadoc destdir="${javadoc.dir}" classpathref="base.classpath" use="true"
+			windowtitle="PayPal SDK v${release.version}"
+			doctitle="PayPal SDK v${release.version}"
+			header="PayPal SDK v${release.version}"
+			bottom="Copyright 2005 PayPal, Inc. All Rights Reserved."
+			private="no"
+			classpath=".;lib/axis.jar;lib/xstream-1.1.3.jar;lib/bcprov-jdk14-128.jar;lib/commons-logging-1.0.4.jar;lib/jaxrpc.jar;lib/axis-schema.jar;lib/activation.jar;lib/bcmail-jdk14-128.jar;lib/saaj.jar;lib/paypal_stubs.jar;lib/paypal_base.jar"
+			breakiterator="yes">
+			<packageset dir="${stubs.src}" defaultexcludes="yes">
+				<include name="com/paypal/soap/**"/>
+			</packageset>
+			<packageset dir="${src.dir}" defaultexcludes="yes">
+				<include name="com/paypal/sdk/**"/>
+				<exclude name="**/**/nvp/**"/>
+				<exclude name="**/**/nvp/"/>
+				<exclude name="src/**/**/NVP*.java"/>
+				<exclude name="**/util/TestConnection.java"/>
+				<exclude name="**/junit/**"/>
+				<exclude name="**/util/ResponseBuilder.java"/>
+			</packageset>
+			<group title="PayPal SDK" packages="com.paypal.sdk.*"/>
+			<group title="PayPal Client Stubs" packages="com.paypal.soap.*"/>
+		</javadoc>
+	</target>
+
+	<target name="nvp-doc" depends="nvp-base" description="generate javadoc" if="doc">
+		<javadoc destdir="${javadoc.dir}" classpathref="base.classpath" use="true"
+			windowtitle="PayPal NVP SDK v${nvp.release.version}"
+			doctitle="PayPal NVP SDK v${nvp.release.version}"
+			header="PayPal NVP SDK v${nvp.release.version}"
+			bottom="Copyright 2005 PayPal, Inc. All Rights Reserved."
+			private="no"
+			classpath=".;lib/axis.jar;lib/xstream-1.1.3.jar;lib/bcprov-jdk14-128.jar;lib/commons-logging-1.0.4.jar;lib/jaxrpc.jar;lib/axis-schema.jar;lib/activation.jar;lib/bcmail-jdk14-128.jar;lib/saaj.jar;lib/paypal_stubs.jar;lib/paypal_base.jar"
+			breakiterator="yes">
+			<packageset dir="${src.dir}" defaultexcludes="yes" >
+				<include name="com/paypal/sdk/**"  />
+				<exclude name="com/paypal/sdk/core/soap/**"  />
+				<exclude name="com/paypal/sdk/services/CallerServices.java"  />
+				<exclude name="**/logging/**"/>
+				<exclude name="**/util/converters/**"/>
+				<exclude name="**/console/**"/>
+				<exclude name="**/command/**"/>
+				<exclude name="**/soap/**"/>
+				<exclude name="**/junit/**"/>
+				<exclude name="**/util/ObjectIterator.java"/>
+			</packageset>
+			<group title="PayPal NVP SDK" packages="com.paypal.sdk.*"/>
+		</javadoc>
+	</target>
+	<!-- ******************** -->
+	<!-- Distribution archive -->
+	<!-- ******************** -->
+	<target name="clean-dist">
+		<delete dir="${dist.dir}" failonerror="false"/>
+	</target>
+	<patternset id="dist.fileset">
+		<include name="build.properties"/>
+		<include name="build.xml"/>
+	</patternset>
+	<!-- includes=&quot;src/** cert/** docs/** lib/** licenses/** samples/**&quot; -->
+	<target name="dist" depends="clean-dist, stubs, base, console,doc, jsp" description="create distribution file">
+		<mkdir dir="${dist.dir}"/>
+		<zip zipfile="${dist.soap.filename}" update="true">
+			<zipfileset dir="." includes="src/** cert/** docs/** lib/** licenses/** samples/**" prefix="paypal_java_sdk">
+				<patternset refid="dist.fileset"/>
+				<include name="ChangeLog.txt"/>
+				<include name="README.html"/>
+				<include name="console.bat"/>
+				<include name="console.sh"/>
+				<include name="build.properties"/>
+				<include name="build.xml"/>
+				<!--<include name="src/wsdl/paypal-endpoints.xml"/>-->
+				<!--<exclude name="**/*.xsd"/>-->
+				<!--<exclude name="**/*.wsdl"/>-->
+				<exclude name="**/junit/**"/>
+				<exclude name="**/nvp/**"/>
+				<exclude name="**/nvp"/>
+				<exclude name="**/core/NVP*.java"/>
+				<exclude name="**/services/NVP*.java"/>
+				<exclude name="**/util/TestConnection.java"/>
+				<exclude name="**/Boarding/**"/>
+				<exclude name="**/lib/junit**"/>
+				<exclude name="**/lib/commons-httpclient**"/>
+				<exclude name="**/lib/sax2**"/>
+				<exclude name="**/lib/xalan**"/>
+				<exclude name="**/lib/xml-apis**"/>
+				<exclude name="**/samples/JSP/README-NVP.txt"/>
+				<exclude name="src/wsdl/paypal-endpoints-nvp.xml"/>
+				<exclude name="**/util/ResponseBuilder.java"/>
+			</zipfileset>
+		</zip>
+
+	</target>
+	<target name="clean-nvp-dist">
+		<delete dir="${dist.dir}" failonerror="false"/>
+	</target>
+	<target name="nvp-dist" depends="clean-nvp-dist, nvp-base, nvp-jsp, nvp-doc" description="create distribution file">
+		<mkdir dir="${dist.dir}"/>
+		<zip zipfile="${dist.nvp.filename}" update="true">
+			<zipfileset dir="." includes="src/com/** cert/** docs/** lib/** licenses/** samples/**" prefix="paypal_nvp_java_sdk">
+				<patternset refid="dist.fileset"/>
+				<include name="ChangeLog-nvp.txt"/>
+				<include name="README-NVP.html"/>
+				<include name="src/wsdl/paypal-endpoints-nvp.xml"/>
+				<exclude name="**/junit/**"/>
+				<exclude name="**/soap/**"/>
+				<exclude name="**/core/APICallerFactory.java"/>
+				<exclude name="**/services/CallerServices.java"/>
+				<exclude name="**/samples/ConsoleScripts/**"/>
+				<exclude name="**/Boarding/**"/>
+				<exclude name="**/lib/axis**"/>
+				<exclude name="**/lib/wsdl**"/>
+				<exclude name="**/lib/paypal_stu**"/>
+				<exclude name="**/lib/paypal_conso**"/>
+				<exclude name="**/lib/client-config.wsdd"/>
+				<exclude name="**/lib/log4j.properties"/>
+				<exclude name="**/lib/junit**"/>
+				<exclude name="**/lib/sax2**"/>
+				<exclude name="**/lib/xalan**"/>
+				<exclude name="**/lib/xercesImpl**"/>
+				<exclude name="**/lib/xml-apis**"/>
+				<exclude name="**/lib/xpp3**"/>
+				<exclude name="**/samples/SampleApp/**"/>
+				<exclude name="**/console/**"/>
+				<exclude name="**/logging/**"/>
+				<exclude name="**/util/**/PPConverter.java"/>
+				<exclude name="**/samples/JSP/README.txt"/>
+				<exclude name="**/util/XMLSerializer.java"/>
+				<exclude name="**/util/ObjectIterator.java"/>
+			</zipfileset>
+		</zip>
+	</target>
+
+	<patternset id="Oauth.patternset">
+		<include name="com/paypal/sdk/util/OAuthSignature.java" />
+		<include name="com/paypal/sdk/util/PayPalURLEncoder.java" />
+		<include name="com/paypal/sdk/exceptions/OAuthException.java" />
+		<include name="com/paypal/sdk/exceptions/PayPalException.java" />
+	</patternset>
+
+	<target name="clean-Oauth">
+		<delete dir="${Oauth.Classes}" failonerror="false" />
+		<delete>
+			<fileset dir="${lib.dir}">
+				<include name="${Oauth.jarname}" />
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="Oauth-base" depends="clean-Oauth">
+		<mkdir dir="${Oauth.Classes}" />
+		<javac destdir="${Oauth.Classes}">
+			<classpath refid="base.classpath" />
+			<src path="${src.dir}" />
+			<patternset refid="Oauth.patternset" />
+		</javac>
+
+		<jar destfile="${lib.dir}/${Oauth.jarname}">
+			<fileset dir="${Oauth.Classes}" />
+		</jar>
+	</target>
+
+	<target name="Oauth-dist" depends="Oauth-base">
+		<zip zipfile="${Oauth.filename}" update="true">
+			<zipfileset dir="." prefix="paypal_auth_signature">
+				<include name="${lib.dir}/${Oauth.jarname}" />
+				<include name="${lib.dir}/commons-codec-1.3.jar" />
+				<include name="README_AUTH_SIGNATURE.html" />
+			</zipfileset>
+		</zip>
+		<delete>
+			<fileset dir="${lib.dir}">
+				<include name="${Oauth.jarname}" />
+			</fileset>
+		</delete>
+	</target>
+
+	<!-- Usage -->
+	<target name="help">
+		<echo message="Usage:"/>
+		<echo message="----------------------------------------------------------------------"/>
+		<echo message="  ant nvp                -  to build NVP core and JSP war file."/>
+		<echo message="  ant soap               -  to build SOAP core and JSP war file."/>
+		<echo message="  ant oauth               -  to build a Oauth core file."/>
+		<echo message="----------------------------------------------------------------------"/>
+	</target>
+</project>

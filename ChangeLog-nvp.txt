@@ -1,0 +1,93 @@
+PayPal NVP SDK for Java
+Change Log
+============================================================================
+Version 5.4.89: Jul-02-2012
+* SDK updated to WSDL version 89.0
+============================================================================
+Version 5.4.68: Apr-14-2012
+* SDK updated to WSDL version 88.0
+============================================================================
+Version 5.4.67: 07-22-2011
+* SDK updated to WSDL version 76.0
+============================================================================
+Version 5.4.66: 07-05-2011
+* Bug Fixed for version override.
+ - If Request String contains a value 'VERSION' other than VERSION parameter.
+============================================================================
+Version 5.4.65: 10-13-2010
+*version updated to 65.1
+============================================================================
+Version 5.4.64: 9-14-2010
+*Reference Implementation Includes Third party permission features
+============================================================================
+Version 5.3.64: 7-12-2010
+*version updated to 64.0
+============================================================================
+Version 5.3.63: 5-3-2010
+*version updated to 63.0
+============================================================================
+Version 5.3.62: 3-4-2010
+*version updated to 62.0
+============================================================================
+Version 5.3.61: 1-15-2010
+*version updated to 61.0
+*JPY currency issue fixed in EC
+============================================================================
+Version 5.3.60: 12-23-2009
+Reference Implementation Includes Recurring Payments and 3D Secure(for UK merchants only) API features.
+API version change to 60.0
+ - line item details in the shopping cart page for EC samples
+ - UniPay support
+ - Third Party authentication support.
+=====================================================================================
+Version 5.3.58: 6-6-2009
+version update to 58.0
+Reference Implementation Includes Instant Update API features
+   - line item details in the shopping cart page for EC samples
+   - SetEC and GetExpressChecoutDetails API calls use Instant Update API for shipping
+API Parameter Typo Bug: Typo in the Shipping Option Label parameter in SetEC
+(for flat rate shipping parameters):Typo: shipingpoptionlabel
+(Target fix timeline: 59.0, around Aug 18, 09.  Afterwards, we will support both the 
+typo version and the correct spelling version for backward compatibility.)  
+   
+======================================================================================
+Version 5.3.57: 3-25-2009
+version update to 57.0
+=============================================================================
+Version 5.3.56: 1-25-2009
+API Version update for push 56, IPR Features for samples DoAuthorization, DoCapture,
+DoReauthorization, and GetTransactionDetails
+===========================================================================
+Version 5.3.55: 10-05-2008
+version update to 55.0
+===========================================================================
+Version 5.3.54: 08-05-2008
+version update to 54.0
+===========================================================================
+Version 5.3.53: 07-17-2008
+version update to 53.0
+===========================================================================
+Version 5.2.5: 05-08-2008
+version update to 52.0
+===========================================================================
+Version 5.2.4: 03-28-2008
+version update to 51.0
+Getbalance API added
+===========================================================================
+Version 5.2.3: 12-13-2007
+Removed Encrypted Web payment (EWP) services file and sample.
+EWP is now part of the Java Web Payment Standards (WPS) Toolkit.
+===========================================================================
+===========================================================================
+Version 5.2.1: 05-14-2007
+PDT, IPN Samples added
+===========================================================================
+===========================================================================
+Version 5.1.1: 04-14-2007
+Minor look'n'feel changes
+===========================================================================
+Version 5.1: 01-14-2007
+Two new samples added - MassPay and ReAuth
+Proxy support provided
+===========================================================================
+Version 5.0: 09-19-2006
